@@ -1,6 +1,4 @@
-# Rendered into secret.yaml by the "Render agent secrets" workflow from GitHub
-# variables. ${NAME} is required, ${NAME:-default} is optional.
-# The rendered secret.yaml contains credentials in plain text: keep your fork PRIVATE.
+# Rendered to sbomscanner.secret.yaml from GitHub variables by the Render agent secrets workflow.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,11 +6,11 @@ metadata:
   namespace: cattle-ai-agent-system
 type: kubernetes.io/basic-auth
 stringData:
+  # SBOMSCANNER_MCP_USERNAME: MCP username (from the server's mcp.auth secret)
   username: ${SBOMSCANNER_MCP_USERNAME}
+  # SBOMSCANNER_MCP_PASSWORD: MCP password (from the server's mcp.auth secret)
   password: ${SBOMSCANNER_MCP_PASSWORD}
 ---
-# CA of the SBOMscanner MCP server certificate (spec.caBundleRef). Copy it from
-# the ca.crt key of the MCP server's TLS secret (sbomscanner-mcp-tls by default).
 apiVersion: v1
 kind: Secret
 metadata:
@@ -20,4 +18,5 @@ metadata:
   namespace: cattle-ai-agent-system
 type: Opaque
 stringData:
+  # SBOMSCANNER_MCP_CA: PEM CA of the MCP server certificate
   ca.crt: ${SBOMSCANNER_MCP_CA}

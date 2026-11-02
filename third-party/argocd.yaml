@@ -1,3 +1,8 @@
+# Argo CD - read-only inventory, sync/health, drift, troubleshooting.
+# MCP server: https://github.com/argoproj-labs/mcp-for-argocd
+# Notes: expose the HTTP /mcp endpoint to the Rancher local cluster; ARGOCD_MCP_TOKEN
+# is the server's MCP_AUTH_TOKEN. Run it with MCP_READ_ONLY=true.
+# Edit: spec.mcpURL (required), "Argo CD web UI" in the Guidelines.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

@@ -1,7 +1,4 @@
-# Rendered into secret.yaml by the "Render agent secrets" workflow from GitHub
-# variables. ${NAME} is required, ${NAME:-default} is optional.
-# The rendered secret.yaml contains credentials in plain text: keep your fork PRIVATE.
-# OAUTH2: both OVHcloud agents can share the same OAuth client.
+# Rendered to ovh-network.secret.yaml from GitHub variables by the Render agent secrets workflow.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -9,7 +6,11 @@ metadata:
   namespace: cattle-ai-agent-system
 type: Opaque
 stringData:
+  # OVH_CLIENT_ID: OAuth2 client ID (shared by both OVHcloud agents)
   clientID: ${OVH_CLIENT_ID}
+  # OVH_CLIENT_SECRET: OAuth2 client secret
   clientSecret: ${OVH_CLIENT_SECRET}
+  # OVH_OAUTH_METADATA_ENDPOINT: optional, change for the ca/us regions
   metadataEndpoint: ${OVH_OAUTH_METADATA_ENDPOINT:-https://mcp.eu.ovhcloud.com/.well-known/oauth-authorization-server/oauth-proxy}
+  # OVH_OAUTH_SCOPE: optional
   scope: ${OVH_OAUTH_SCOPE:-all}

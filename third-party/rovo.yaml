@@ -1,3 +1,8 @@
+# Atlassian Rovo - Jira and Confluence; opens network/firewall request tickets.
+# MCP server: https://support.atlassian.com/atlassian-rovo-mcp-server/docs/configuring-authentication-via-api-token/
+# Notes: an org admin must allow API-token auth for the Rovo MCP server. Use a
+# dedicated account. Do not add ?tools=all to the URL (bypasses approvals).
+# Edit: Jira project key, issue type, labels and site in the Guidelines.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

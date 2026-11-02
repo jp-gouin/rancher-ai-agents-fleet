@@ -1,3 +1,7 @@
+# SUSE Application Collection - hardened images and charts, SBOMs, CVE data.
+# MCP server: hosted by SUSE (https://docs.apps.rancher.io).
+# Notes: checks pull secrets with the built-in Rancher agent and GitOps ownership
+# with the Continuous Delivery agent before proposing changes; keep both enabled.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

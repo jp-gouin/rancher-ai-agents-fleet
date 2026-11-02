@@ -1,3 +1,7 @@
+# GitHub - repos, PRs, issues, Actions; proposes GitOps changes as PRs.
+# MCP server: https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md
+# Notes: GH_MCP_TOKEN is a fine-grained PAT; use .../mcp/readonly as spec.mcpURL
+# for read-only access. Write tools require approval (humanValidationTools).
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

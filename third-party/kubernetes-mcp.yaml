@@ -1,3 +1,9 @@
+# Kubernetes MCP - read-only introspection of the Rancher local cluster.
+# MCP server: https://github.com/containers/kubernetes-mcp-server
+# Notes: no auth, so run it read-only (read_only, disable_destructive, deny Secret,
+# "view" ClusterRole) and restrict access to app=rancher-ai-agent pods in
+# cattle-ai-agent-system with a NetworkPolicy.
+# Edit: spec.mcpURL.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

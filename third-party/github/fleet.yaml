@@ -1,5 +1,0 @@
-defaultNamespace: cattle-ai-agent-system
-namespace: cattle-ai-agent-system
-helm:
-  # adopt an agent with the same name previously created in the Rancher UI
-  takeOwnership: true

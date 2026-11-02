@@ -1,23 +1,16 @@
-# Fleet GitRepo for your PRIVATE fork. Apply it on the Rancher local cluster
-# (or create the same thing in Rancher > Continuous Delivery > Git Repos,
-# workspace fleet-local). Keep only the agents you want under `paths`.
+# Fleet GitRepo for your PRIVATE copy. Apply it on the Rancher local cluster, or
+# create the same thing in Rancher > Continuous Delivery > Git Repos (workspace
+# fleet-local). Each path is one bundle; drop the one you don't need.
 apiVersion: fleet.cattle.io/v1alpha1
 kind: GitRepo
 metadata:
   name: rancher-ai-agents
   namespace: fleet-local          # Rancher AI agents live on the local cluster
 spec:
-  repo: https://github.com/<you>/<your-private-fork>
+  repo: https://github.com/<you>/<your-private-copy>
   branch: main
-  # Private fork: a basic-auth Secret in fleet-local with username + a
-  # read-only token (fine-grained PAT with Contents: read) as password.
+  # basic-auth Secret in fleet-local: username + read-only token (Contents: read)
   clientSecretName: rancher-ai-agents-git-auth
   paths:
-    - suse/appco
-    - suse/sbomscanner
-    - third-party/argocd
-    - third-party/github
-    - third-party/kubernetes-mcp
-    - third-party/ovh-dedicated-server
-    - third-party/ovh-network
-    - third-party/rovo
+    - suse
+    - third-party
