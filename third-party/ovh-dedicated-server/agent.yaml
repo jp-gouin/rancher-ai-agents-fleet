@@ -1,0 +1,15 @@
+# Secrets the deploy workflow creates in cattle-ai-agent-system before Fleet
+# applies aiagentconfig.yaml. Only GitHub secret NAMES live here, never values.
+name: ovh-dedicated-server
+secret:
+  name: ai-agent-ovh-dedicated-server-auth   # = spec.authenticationSecret
+  type: Opaque
+  data:                                # <secret key>: <GitHub secret name>
+    # One OVHcloud MCP OAuth2 client per region is shared by the ovh-dedicated-server
+    # and ovh-network agents (same authorization server), hence the generic OVH_* names.
+    clientID: OVH_CLIENT_ID
+    clientSecret: OVH_CLIENT_SECRET
+    metadataEndpoint: OVH_OAUTH_METADATA_ENDPOINT   # optional, has a default
+  defaults:                            # <secret key>: <literal> (used when the GitHub secret is unset)
+    metadataEndpoint: https://mcp.eu.ovhcloud.com/.well-known/oauth-authorization-server/oauth-proxy
+    scope: all

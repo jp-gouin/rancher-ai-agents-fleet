@@ -1,0 +1,23 @@
+# Secrets the deploy workflow creates in cattle-ai-agent-system before Fleet
+# applies aiagentconfig.yaml. Only GitHub secret NAMES live here, never values.
+name: sbomscanner
+secret:
+  name: ai-agent-sbomscanner-auth      # = spec.authenticationSecret
+  type: kubernetes.io/basic-auth
+  data:                                # <secret key>: <GitHub secret name>
+    username: SBOMSCANNER_MCP_USERNAME # same values as the server's mcp.auth secret
+    password: SBOMSCANNER_MCP_PASSWORD
+copySecrets:
+  # CA of the MCP server's self-signed cert-manager certificate
+  # (= spec.caBundleRef). Re-run the deploy after cert-manager renews it.
+  # Rancher Apps installs use namespace cattle-sbomscanner-system and secret
+  # rancher-sbomscanner-mcp-tls: override with the two GitHub variables.
+  - from:
+      namespace: sbomscanner
+      namespaceVar: SBOMSCANNER_NAMESPACE
+      name: sbomscanner-mcp-tls
+      nameVar: SBOMSCANNER_MCP_TLS_SECRET
+      key: ca.crt
+    to:
+      name: sbomscanner-mcp-ca
+      key: ca.crt

@@ -1,0 +1,10 @@
+# Secrets the deploy workflow creates in cattle-ai-agent-system before Fleet
+# applies aiagentconfig.yaml. Only GitHub secret NAMES live here, never values.
+name: argocd
+secret:
+  name: ai-agent-argocd-auth           # = spec.authenticationSecret
+  type: Opaque
+  data:                                # <secret key>: <GitHub secret name>
+    # HEADER auth: every key is sent as an HTTP header to the MCP server.
+    # Value: "Bearer <MCP_AUTH_TOKEN of the MCP server>".
+    Authorization: ARGOCD_MCP_AUTH_HEADER
