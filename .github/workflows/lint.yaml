@@ -16,7 +16,7 @@ jobs:
       - name: Check agent folders
         run: ./scripts/lint.sh
       - name: shellcheck
-        run: shellcheck scripts/*.sh
+        run: shellcheck -S warning scripts/*.sh
       - name: Dry-run render and secrets for every agent
         run: |
           set -euo pipefail

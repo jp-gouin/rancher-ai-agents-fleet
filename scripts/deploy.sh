@@ -58,7 +58,7 @@ apply() {
 
 # Resolve AGENTS into "category/name" folders.
 resolve_agents() {
-  local list a matches
+  local list a c matches
   list="$(tr ',' ' ' <<<"${AGENTS:-}" | xargs)"
   [[ -z "$list" ]] && die "AGENTS is empty. Set the AGENTS repository variable, e.g. 'appco,github' or 'all'."
   if [[ "$list" == "all" ]]; then
@@ -73,9 +73,12 @@ resolve_agents() {
       [[ -f "$ROOT/$a/aiagentconfig.yaml" ]] || die "unknown agent '$a'"
       echo "$a"
     else
-      matches="$(cd "$ROOT" && ls -d suse/"$a" third-party/"$a" 2>/dev/null || true)"
+      matches=""
+      for c in suse third-party; do
+        [[ -f "$ROOT/$c/$a/aiagentconfig.yaml" ]] && matches+="$c/$a"$'\n'
+      done
       [[ -n "$matches" ]] || die "unknown agent '$a' (looked in suse/ and third-party/)"
-      echo "$matches"
+      printf '%s' "$matches"
     fi
   done
 }
