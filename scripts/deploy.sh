@@ -109,7 +109,12 @@ build_secret() {
     if [[ "$(yq -r "$path.optional // false" "$file")" == "true" ]]; then
       warn "$agent: optional secret $name skipped (not set: ${missing[*]})"; return 0
     fi
-    die "$agent: missing GitHub secret(s): ${missing[*]}"
+    if [[ "$DRY_RUN" == "true" ]]; then
+      warn "$agent: missing GitHub secret(s): ${missing[*]} (the real run will fail)"
+      for key in "${missing[@]}"; do : >"$dir/missing-$key"; done
+    else
+      die "$agent: missing GitHub secret(s): ${missing[*]}"
+    fi
   fi
 
   kubectl create secret generic "$name" -n "$NS" --type="$type" --from-file="$dir" \
