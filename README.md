@@ -1,11 +1,12 @@
 # Rancher AI agents with Fleet
 
-A ready-to-fork [Rancher Fleet](https://fleet.rancher.io) repository of custom
+A ready-to-use [Rancher Fleet](https://fleet.rancher.io) repository of custom
 **Rancher AI agents** (`AIAgentConfig` resources) that run next to the built-in
 Rancher, Continuous Delivery, and Cluster Provisioning agents.
 
-Fork it, set a few GitHub secrets and variables, run one workflow, and Fleet
-keeps the agents in sync with your fork. Credentials never go into git.
+Copy it into your own **private** repository, set a few GitHub variables, and
+point Fleet at it. Fleet does all the deploying. GitHub Actions only renders the
+agents' credentials into your private repository and never touches your cluster.
 
 ## Agents
 
@@ -42,89 +43,77 @@ upstream documentation and only adds notes specific to Rancher AI.
 
 ## How it works
 
-```mermaid
-flowchart LR
-  subgraph fork[Your fork]
-    T["main: suse/*, third-party/*<br/>aiagentconfig.yaml with ${VARIABLES}"]
-    S[GitHub secrets & variables]
-    W[Deploy AI agents workflow]
-    B["fleet branch<br/>rendered manifests"]
-  end
-  S --> W
-  T --> W
-  W -- render --> B
-  W -- "Secrets" --> NS[(cattle-ai-agent-system)]
-  W -- "GitRepo" --> F[Fleet<br/>fleet-local]
-  F -- watches --> B
-  F -- applies --> A[AIAgentConfigs] --> R[Rancher AI]
+```
+suse/appco/
+├── fleet.yaml           Fleet bundle: namespace cattle-ai-agent-system
+├── aiagentconfig.yaml   the agent; edit it in your copy (URLs, enabled, ...)
+├── secret.yaml.tpl      auth Secret with ${GITHUB_VARIABLE} placeholders
+├── secret.yaml          rendered by GitHub Actions in your private copy
+├── .fleetignore         keeps README.md and *.tpl out of the bundle
+└── README.md
 ```
 
-- Each agent folder holds a plain `aiagentconfig.yaml`. Settings that are not
-  secret are written as `${VARIABLE}` or `${VARIABLE:-default}` placeholders.
-- `agent.yaml` maps **GitHub secret names** to the keys of the agent's
-  Kubernetes Secret. It never contains values.
-- The **Deploy AI agents** workflow:
-  1. creates the Secrets in `cattle-ai-agent-system`;
-  2. fills the placeholders from your **GitHub variables** and pushes the result
-     to the `fleet` branch;
-  3. registers a Fleet `GitRepo` in `fleet-local` (the Rancher local cluster)
-     that watches that branch, limited to the agents in `AGENTS`.
-- Every push to `main` that changes an agent re-renders the `fleet` branch, and
-  Fleet applies the change. This step needs no cluster access.
+```mermaid
+flowchart LR
+  V[GitHub variables] --> W[Render agent secrets<br/>workflow]
+  W -- "commits secret.yaml" --> M[main branch<br/>of your private repo]
+  M -- "GitRepo (fleet-local)" --> F[Fleet]
+  F -- "AIAgentConfig + Secret" --> NS[(cattle-ai-agent-system<br/>Rancher local cluster)]
+```
 
-`AIAgentConfig`s always live in `cattle-ai-agent-system` on the Rancher local
-cluster, so the namespace and Fleet workspace are fixed.
+1. The **Render agent secrets** workflow fills each `secret.yaml.tpl` from your
+   GitHub variables and commits the resulting `secret.yaml` to `main`. An agent
+   is rendered only when all of its required variables are set.
+2. A Fleet **GitRepo** in the `fleet-local` workspace watches `main`. Each agent
+   folder is one bundle containing `aiagentconfig.yaml` and `secret.yaml`.
+3. Rancher AI picks up the `AIAgentConfig`s in `cattle-ai-agent-system`.
+
+> [!WARNING]
+> `secret.yaml` holds credentials in plain text, and so do GitHub variables
+> (anyone with read access to the repository can see them). Use a **private**
+> repository with restricted access. The workflow refuses to run in a public
+> repository, and CI fails if a `secret.yaml` is committed here.
 
 ## Quick start
 
-**Prerequisites**
-- Rancher with Rancher AI installed.
-- The MCP servers you want to use are reachable from the Rancher local cluster.
-  See each agent's README.
-- A kubeconfig for the Rancher local cluster that can manage Secrets in
-  `cattle-ai-agent-system` and GitRepos in `fleet-local`, and reach the API from
-  the GitHub runner. For private APIs, use a
-  [self-hosted runner](https://docs.github.com/actions/hosting-your-own-runners)
-  and set `RUNNER`.
+**Prerequisites:** Rancher with Rancher AI installed, and the MCP servers you
+want to use reachable from the Rancher local cluster (see each agent's README).
 
-**1. Fork** the repository, then enable workflows under **Actions**.
+1. **Create your private copy.** Click **Use this template → Create a new
+   repository**, then choose **Private**. Don't use *Fork*: a fork of a public
+   repository is always public.
 
-**2. Set the common settings** under **Settings → Secrets and variables → Actions**:
+2. **Choose your agents.** Delete the agent folders you don't need, or simply
+   leave them out of the GitRepo `paths` (step 5).
 
-| Kind | Name | Required | Description |
-|------|------|----------|-------------|
-| Secret | `RANCHER_KUBECONFIG` | yes | Kubeconfig of the Rancher local cluster (raw YAML or base64) |
-| Variable | `AGENTS` | yes | Agents to deploy, comma-separated (`appco,rovo`, `third-party/github`) or `all` |
-| Secret | `FLEET_GIT_TOKEN` | private forks | Read-only token Fleet uses to clone the fork |
-| Variable | `RUNNER` | no | Runner label (default `ubuntu-latest`) |
-| Variable | `FLEET_BRANCH` | no | Branch for the rendered manifests (default `fleet`) |
-| Variable | `GITREPO_NAME` | no | Fleet GitRepo name (default `rancher-ai-agents`) |
-| Variable | `FLEET_REPO_URL` | no | Override the repository URL Fleet clones |
+3. **Adjust the agents.** Edit `aiagentconfig.yaml` where its README says to.
+   For example, the Argo CD MCP URL is marked `# EDIT`, and the Rovo Jira
+   project key is in the Guidelines.
 
-**3. Set each agent's secrets and variables**, as listed in the
-**Configuration** table of its README. Most variables have sensible defaults.
+4. **Set the credentials.** Under **Settings → Secrets and variables → Actions →
+   Variables**, add the variables listed in each agent's README. Then run
+   **Actions → Render agent secrets** and check the summary:
+   ```
+   rendered suse/appco/secret.yaml
+   skipped  third-party/argocd (not configured: ARGOCD_MCP_TOKEN)
+   ```
+   The workflow also runs on every push that changes a template. Run it again
+   by hand after you change a variable.
 
-**4. Deploy**: go to **Actions → Deploy AI agents → Run workflow**. Tick
-**dry_run** first to see the rendered manifests, then run it for real.
+5. **Point Fleet at the repository.** In Rancher, open **Continuous Delivery →
+   Git Repos**, select the `fleet-local` workspace, and create a GitRepo:
+   - **Repository URL**: your private repository, branch `main`.
+   - **Authentication**: HTTP basic auth with a read-only token (a fine-grained
+     PAT with *Contents: read*).
+   - **Paths**: the agent folders you want, e.g. `suse/appco`, `third-party/rovo`.
 
-```bash
-kubectl get gitrepo -n fleet-local rancher-ai-agents
-kubectl get aiagentconfig -n cattle-ai-agent-system
-```
+   Or apply [`examples/gitrepo.yaml`](examples/gitrepo.yaml) after editing it.
 
-Run the workflow manually again after you change a **secret** or `AGENTS`.
-Changes to variables or agent files are rendered on the next push to `main`, or
-on any manual run.
-
-### Running locally
-```bash
-export KUBECONFIG=~/.kube/rancher-local.yaml AGENTS=appco,rovo
-export APPCO_USERNAME=... APPCO_PASSWORD=... ROVO_USERNAME=... ROVO_API_TOKEN=... ROVO_JIRA_PROJECT_KEY=NET
-./scripts/deploy.sh secrets
-./scripts/deploy.sh render ./rendered    # then push ./rendered to the fleet branch
-./scripts/deploy.sh gitrepo
-```
-Add `DRY_RUN=true` to print the manifests instead (secret values are redacted).
+6. **Check:**
+   ```bash
+   kubectl get gitrepo -n fleet-local
+   kubectl get aiagentconfig -n cattle-ai-agent-system
+   ```
 
 ## Migrating agents created in the UI
 Fleet takes over (`helm.takeOwnership`) and overwrites any agent with the same
@@ -134,30 +123,19 @@ Fleet takes over (`helm.takeOwnership`) and overwrites any agent with the same
 kubectl get aiagentconfig -n cattle-ai-agent-system <name> -o yaml > backup-<name>.yaml
 ```
 
+## Getting updates
+To pull improvements from this repository into your copy:
+
+```bash
+git remote add upstream https://github.com/jp-gouin/rancher-ai-agents-fleet.git
+git fetch upstream && git merge upstream/main --allow-unrelated-histories
+```
+
 ## Contributing an agent
 See [docs/adding-an-agent.md](docs/adding-an-agent.md): the folder layout,
-placeholder syntax, `agent.yaml` reference, secret formats Rancher AI expects,
-and how to write a good Agent Profile and Guidelines. `./scripts/lint.sh` runs
-the same checks as CI.
-
-## Repository layout
-```
-suse/<agent>/            SUSE product agents      ┐ aiagentconfig.yaml, agent.yaml, README.md
-third-party/<agent>/     third-party agents       ┘
-scripts/deploy.sh        secrets | render | gitrepo
-scripts/lint.sh          static checks used by CI
-scripts/wire-secrets.sh  list agent secrets in the deploy workflow
-docs/                    contributor guide
-```
-
-## Security notes
-- Secrets exist only as GitHub encrypted secrets and Kubernetes Secrets. The
-  workflow lists each secret explicitly. It does not use `toJSON(secrets)`,
-  which GitHub holds for manual approval anyway.
-- With HEADER auth, Rancher AI sends **every key** of the auth Secret as an HTTP
-  header, so those Secrets contain only headers.
-- CI rejects private IPs, wildcard-DNS hosts, certificates, private keys, and
-  GitHub tokens.
+`secret.yaml.tpl` syntax, the Secret formats Rancher AI expects, and how to
+write a good Agent Profile and Guidelines. `./scripts/lint.sh` runs the same
+checks as CI. Never include a rendered `secret.yaml` in a pull request.
 
 ## License
 [Apache 2.0](LICENSE)

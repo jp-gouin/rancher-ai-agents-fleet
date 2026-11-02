@@ -11,12 +11,20 @@ See its documentation to install and configure it.
 
 ## Configuration
 
-| Kind | Name | Required | Description |
-|------|------|----------|-------------|
-| Secret | `ARGOCD_MCP_AUTH_HEADER` | yes | `Authorization` header value: `Bearer <MCP_AUTH_TOKEN>` |
-| Variable | `ARGOCD_MCP_URL` | yes | MCP endpoint, for example `https://argocd-mcp.example.com/mcp` |
-| Variable | `ARGOCD_UI_URL` | no | Argo CD web UI URL, for example `https://argocd.example.com`. Enables deep links in answers |
-| Variable | `ARGOCD_ENABLED` | no | Default `true` |
+### GitHub variables
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `ARGOCD_MCP_TOKEN` | yes | `MCP_AUTH_TOKEN` set on the MCP server. The template adds the `Bearer ` prefix |
+
+### Settings in aiagentconfig.yaml
+
+- `spec.mcpURL`: example value `https://argocd-mcp.example.com/mcp`, marked
+  `# EDIT`. You must change it to the `/mcp` endpoint of your MCP server.
+- `spec.enabled`: default `true`.
+- `Argo CD web UI` line in the system prompt (Environment): default
+  `not configured`. Set it to your Argo CD UI URL, for example
+  `https://argocd.example.com`, to get deep links in answers.
 
 ## Rancher AI notes
 - Run the MCP server with the HTTP transport and expose its `/mcp` endpoint so
@@ -24,9 +32,8 @@ See its documentation to install and configure it.
   runs), not only from the cluster that runs Argo CD.
 - Authentication is `HEADER`: Rancher AI sends every key of the
   `ai-agent-argocd-auth` secret as an HTTP header. The only key is
-  `Authorization`, and its value must be `Bearer <token>`, where `<token>` is the
-  `MCP_AUTH_TOKEN` set on the MCP server. The Argo CD API token stays on the MCP
-  server and never goes through Rancher AI.
+  `Authorization: Bearer <ARGOCD_MCP_TOKEN>`. The Argo CD API token stays on the
+  MCP server and never goes through Rancher AI.
 - Run the MCP server in read-only mode (`MCP_READ_ONLY=true`), ideally with a
   read-only Argo CD account. The mutating tools are also listed in
   `humanValidationTools`, so the user must confirm them if read-only mode is off.

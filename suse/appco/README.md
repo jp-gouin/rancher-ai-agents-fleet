@@ -9,12 +9,17 @@ install. See the [Application Collection documentation](https://docs.apps.ranche
 
 ## Configuration
 
-| Kind | Name | Required | Description |
-|------|------|----------|-------------|
-| Secret | `APPCO_USERNAME` | yes | Application Collection user or service account |
-| Secret | `APPCO_PASSWORD` | yes | Application Collection access token |
-| Variable | `APPCO_MCP_URL` | no | Default `https://mcp.apps.rancher.io` |
-| Variable | `APPCO_ENABLED` | no | Default `true` |
+### GitHub variables
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `APPCO_USERNAME` | yes | Application Collection user or service account |
+| `APPCO_PASSWORD` | yes | Application Collection access token |
+
+### Settings in aiagentconfig.yaml
+
+- `spec.mcpURL`: default `https://mcp.apps.rancher.io`.
+- `spec.enabled`: default `true`.
 
 ## Rancher AI notes
 - Before it changes a workload, the agent asks the built-in **Rancher** agent to

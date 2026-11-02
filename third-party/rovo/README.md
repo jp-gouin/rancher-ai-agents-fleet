@@ -15,22 +15,39 @@ the Rovo MCP server. See
 
 ## Configuration
 
-| Kind | Name | Required | Description |
-|------|------|----------|-------------|
-| Secret | `ROVO_USERNAME` | yes | Email address of the Atlassian account that owns the API token |
-| Secret | `ROVO_API_TOKEN` | yes | [Atlassian API token](https://id.atlassian.com/manage-profile/security/api-tokens) scoped for the Rovo MCP app |
-| Variable | `ROVO_SITE` | no | Default site, e.g. `example.atlassian.net`. If unset and several sites are reachable, the agent asks |
-| Variable | `ROVO_JIRA_PROJECT_KEY` | no | Jira project that receives network requests, e.g. `NET`. If unset, the agent asks |
-| Variable | `ROVO_JIRA_ISSUE_TYPE` | no | Issue type for network requests. Default `Task` |
-| Variable | `ROVO_JIRA_LABELS` | no | Labels for network requests. Default `network-request,rancher-ai` |
-| Variable | `ROVO_MCP_URL` | no | Default `https://mcp.atlassian.com/v2/mcp` |
-| Variable | `ROVO_ENABLED` | no | Default `true` |
+### GitHub variables
+
+Rendered into `secret.yaml` from `secret.yaml.tpl`.
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `ROVO_USERNAME` | yes | Email address of the Atlassian account that owns the API token |
+| `ROVO_API_TOKEN` | yes | [Atlassian API token](https://id.atlassian.com/manage-profile/security/api-tokens) scoped for the Rovo MCP app |
+
+### Settings in aiagentconfig.yaml
+
+Edit these directly in your fork:
+
+- `spec.mcpURL`: default `https://mcp.atlassian.com/v2/mcp`
+- `spec.enabled`: default `true`
+- In the Guidelines (`spec.systemPrompt`):
+  - **Jira project** (*Network request settings*): default `not configured
+    (ask the user for the project key; do not guess one)`. **Replace it with
+    your network team's project key** (for example `NET`), otherwise the agent
+    asks for it every time it opens a network request.
+  - **Issue type**: default `Task`.
+  - **Labels**: default `network-request,rancher-ai`.
+  - **Default Atlassian site** (*Site first* directive): default `not
+    configured`. Set it (for example `example.atlassian.net`) if several sites
+    are reachable; otherwise the agent asks which one to use.
 
 ## Rancher AI notes
 - **Authentication.** The agent uses BASIC authentication. The
   `ai-agent-rovo-auth` Secret holds the account email as `username` and the API
-  token as `password`. The agent sees and changes exactly what that account
-  can, so use a dedicated account. Rotate `ROVO_API_TOKEN` before it expires.
+  token as `password`, rendered from the GitHub variables above. The agent
+  sees and changes exactly what that account can, so use a dedicated account.
+  Rotate the token before it expires: update `ROVO_API_TOKEN` and run the
+  *Render agent secrets* workflow again.
 - **Approvals.** Every Jira or Confluence write requires approval in the chat
   through `humanValidationTools`. This includes the deferred
   `executeWrite` and `executeDestructive` tools. Do not add `?tools=all` to the

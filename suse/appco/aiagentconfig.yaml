@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: SUSE Application Collection
-  enabled: ${APPCO_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${APPCO_MCP_URL:-https://mcp.apps.rancher.io}
+  mcpURL: https://mcp.apps.rancher.io
   authenticationType: BASIC
   authenticationSecret: ai-agent-appco-auth
   humanValidationTools: []

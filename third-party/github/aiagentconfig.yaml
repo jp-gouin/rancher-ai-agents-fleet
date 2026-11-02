@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: GitHub
-  enabled: ${GH_MCP_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${GH_MCP_URL:-https://api.githubcopilot.com/mcp/}
+  mcpURL: https://api.githubcopilot.com/mcp/
   authenticationType: HEADER
   authenticationSecret: ai-agent-github-auth
   # Write tools that require explicit user approval. Tools not exposed by the

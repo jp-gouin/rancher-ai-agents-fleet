@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: Atlassian Rovo
-  enabled: ${ROVO_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${ROVO_MCP_URL:-https://mcp.atlassian.com/v2/mcp}
+  mcpURL: https://mcp.atlassian.com/v2/mcp
   authenticationType: BASIC
   authenticationSecret: ai-agent-rovo-auth
   humanValidationTools:
@@ -70,7 +70,7 @@ spec:
       spaces, sprints, boards). Writes and deletes require user approval.
 
     ## Core directives
-    - **Site first**: default Atlassian site: ${ROVO_SITE:-not configured}. Use it
+    - **Site first**: default Atlassian site: not configured. Use it
       unless the user names another one, and resolve the `cloudId` with
       `getAccessibleAtlassianResources` before any site-specific call. If no
       default site is configured, several sites are reachable and none is
@@ -104,9 +104,9 @@ spec:
     blocked egress/ingress, unreachable registry or API), always open a Jira
     request so the network team can review and, if needed, open firewall rules.
     Network request settings:
-    - Jira project: ${ROVO_JIRA_PROJECT_KEY:-not configured (ask the user for the project key; do not guess one)}
-    - Issue type: ${ROVO_JIRA_ISSUE_TYPE:-Task}
-    - Labels: ${ROVO_JIRA_LABELS:-network-request,rancher-ai}
+    - Jira project: not configured (ask the user for the project key; do not guess one)
+    - Issue type: Task
+    - Labels: network-request,rancher-ai
 
     1. Collect the facts from the conversation and from the other agents (ask the
        Rancher agent for cluster, node and pod CIDRs, node IPs, egress IPs,

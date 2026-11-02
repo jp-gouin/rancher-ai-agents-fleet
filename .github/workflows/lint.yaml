@@ -14,21 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check agent folders
+        env:
+          PUBLIC_REPO: ${{ !github.event.repository.private }}
         run: ./scripts/lint.sh
       - name: shellcheck
         run: shellcheck -S warning scripts/*.sh
-      - name: Dry-run render and secrets for every agent
-        run: |
-          set -euo pipefail
-          # dummy values for every secret and every required variable
-          for n in $(yq -r '[.secret.data, (.extraSecrets // [])[].data] | map(select(. != null) | to_entries[] | .value) | .[]' suse/*/agent.yaml third-party/*/agent.yaml | sort -u); do export "$n=dummy"; done
-          for n in $(grep -ohE '\$\{[A-Z0-9_]+\}' suse/*/aiagentconfig.yaml third-party/*/aiagentconfig.yaml | tr -d '${}' | sort -u); do export "$n=https://example.com"; done
-          export KUBECONFIG=/dev/null AGENTS=all DRY_RUN=true
-          ./scripts/deploy.sh secrets > /dev/null
-          ./scripts/deploy.sh render "$RUNNER_TEMP/rendered"
-          REPO_URL=https://github.com/example/fork ./scripts/deploy.sh gitrepo > /dev/null
 
   no-personal-data:
+    # Only meaningful for the public upstream repository: private forks commit rendered secrets.
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

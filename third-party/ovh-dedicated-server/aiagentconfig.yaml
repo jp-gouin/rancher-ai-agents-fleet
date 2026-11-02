@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: OVHcloud Dedicated Server
-  enabled: ${OVH_DEDICATED_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${OVH_DEDICATED_MCP_URL:-https://mcp.eu.ovhcloud.com/mcp/v1_dedicated_server}
+  mcpURL: https://mcp.eu.ovhcloud.com/mcp/v1_dedicated_server
   authenticationType: OAUTH2
   authenticationSecret: ai-agent-ovh-dedicated-server-auth
   humanValidationTools:

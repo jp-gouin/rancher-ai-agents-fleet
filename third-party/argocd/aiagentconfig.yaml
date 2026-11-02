@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: Argo CD
-  enabled: ${ARGOCD_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${ARGOCD_MCP_URL}
+  mcpURL: https://argocd-mcp.example.com/mcp   # EDIT: URL of your Argo CD MCP server
   authenticationType: HEADER
   authenticationSecret: ai-agent-argocd-auth
   # Mutating mcp-for-argocd tools. They do not exist when the MCP server runs
@@ -54,7 +54,7 @@ spec:
     what is deployed, whether it matches Git, and why it is unhealthy.
 
     ## Environment
-    - Argo CD web UI: ${ARGOCD_UI_URL:-not configured}
+    - Argo CD web UI: not configured
 
     ## Tools
     - `list_applications`: inventory of Applications ("list apps", "what is

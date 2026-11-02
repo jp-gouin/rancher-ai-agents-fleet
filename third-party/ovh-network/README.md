@@ -11,18 +11,30 @@ nothing to install. See the [OVHcloud MCP server documentation](https://labs.ovh
 
 ## Configuration
 
-| Kind | Name | Required | Description |
-|------|------|----------|-------------|
-| Secret | `OVH_CLIENT_ID` | yes | OAuth2 client ID registered on the OVHcloud MCP OAuth proxy (shared with `ovh-dedicated-server`) |
-| Secret | `OVH_CLIENT_SECRET` | yes | OAuth2 client secret (shared with `ovh-dedicated-server`) |
-| Secret | `OVH_OAUTH_METADATA_ENDPOINT` | no | Default `https://mcp.eu.ovhcloud.com/.well-known/oauth-authorization-server/oauth-proxy` (use `mcp.ca.` / `mcp.us.` for other regions) |
-| Variable | `OVH_NETWORK_MCP_URL` | no | Default `https://mcp.eu.ovhcloud.com/mcp/v1_ip` |
-| Variable | `OVH_NETWORK_ENABLED` | no | Default `true` |
+### GitHub variables
+
+Rendered into `secret.yaml` from `secret.yaml.tpl`. Shared with `ovh-dedicated-server`.
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `OVH_CLIENT_ID` | yes | OAuth2 client ID registered on the OVHcloud MCP OAuth proxy |
+| `OVH_CLIENT_SECRET` | yes | OAuth2 client secret |
+| `OVH_OAUTH_METADATA_ENDPOINT` | no | Default `https://mcp.eu.ovhcloud.com/.well-known/oauth-authorization-server/oauth-proxy` (use `mcp.ca.` / `mcp.us.` for other regions) |
+| `OVH_OAUTH_SCOPE` | no | Default `all` |
+
+### Settings in aiagentconfig.yaml
+
+Edit these directly in your fork:
+
+- `spec.mcpURL`: default `https://mcp.eu.ovhcloud.com/mcp/v1_ip`
+  (use `mcp.ca.` / `mcp.us.` for other regions, matching
+  `OVH_OAUTH_METADATA_ENDPOINT`)
+- `spec.enabled`: default `true`
 
 ## Rancher AI notes
 - **OAuth2 setup.** Login and client registration work the same way as for
   [`ovh-dedicated-server`](../ovh-dedicated-server/README.md#rancher-ai-notes),
-  and both agents share the same `OVH_*` secrets.
+  and both agents share the same `OVH_*` GitHub variables.
 - **Is the cluster hosted at OVHcloud?** To decide, the agent asks the built-in
   **Rancher** agent for the cluster labels and node IPs, then matches the IPs
   against your OVHcloud IP blocks. It asks you only as a last resort.

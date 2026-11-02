@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: OVHcloud Network
-  enabled: ${OVH_NETWORK_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${OVH_NETWORK_MCP_URL:-https://mcp.eu.ovhcloud.com/mcp/v1_ip}
+  mcpURL: https://mcp.eu.ovhcloud.com/mcp/v1_ip
   authenticationType: OAUTH2
   authenticationSecret: ai-agent-ovh-network-auth
   humanValidationTools:

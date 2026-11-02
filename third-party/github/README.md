@@ -15,12 +15,18 @@ needs is recommended.
 
 ## Configuration
 
-| Kind | Name | Required | Description |
-|------|------|----------|-------------|
-| Secret | `GH_MCP_TOKEN` | yes | `Authorization` header value: `Bearer <PAT>`, including the `Bearer ` prefix |
-| Secret | `GH_MCP_TOOLSETS` | no | Comma-separated toolsets sent as `X-MCP-Toolsets`. Default `context,repos,issues,pull_requests,users,actions` |
-| Variable | `GH_MCP_URL` | no | Default `https://api.githubcopilot.com/mcp/`. Use `https://api.githubcopilot.com/mcp/readonly` for read tools only |
-| Variable | `GH_MCP_ENABLED` | no | Default `true` |
+### GitHub variables
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `GH_MCP_TOKEN` | yes | GitHub personal access token (bare PAT). The template adds the `Bearer ` prefix |
+| `GH_MCP_TOOLSETS` | no | Comma-separated toolsets sent as `X-MCP-Toolsets`. Default `context,repos,issues,pull_requests,users,actions` |
+
+### Settings in aiagentconfig.yaml
+
+- `spec.mcpURL`: default `https://api.githubcopilot.com/mcp/`. Use
+  `https://api.githubcopilot.com/mcp/readonly` for read tools only.
+- `spec.enabled`: default `true`.
 
 ## Rancher AI notes
 - Authentication is `HEADER`: Rancher AI sends every key of the

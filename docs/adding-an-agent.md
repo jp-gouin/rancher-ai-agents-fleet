@@ -1,19 +1,34 @@
 # Adding an agent
 
-## 1. Create the folder
+## Folder layout
 Put SUSE products under `suse/<name>/` and everything else under `third-party/<name>/`.
-The folder needs three files:
 
 ```
 third-party/my-tool/
-├── aiagentconfig.yaml   # the AIAgentConfig, with ${VARIABLE} placeholders
-├── agent.yaml           # which GitHub secrets become which Kubernetes Secret keys
-└── README.md            # what it does, upstream MCP link, configuration table, Rancher AI notes
+├── fleet.yaml           # Fleet bundle options
+├── .fleetignore         # keeps README.md and *.tpl out of the bundle
+├── aiagentconfig.yaml   # the AIAgentConfig (plain YAML, edited directly)
+├── secret.yaml.tpl      # auth Secret template, rendered from GitHub variables
+└── README.md            # what it does, upstream MCP link, variables, Rancher AI notes
 ```
 
 Copy [`suse/appco`](../suse/appco) as a starting point.
 
-## 2. `aiagentconfig.yaml`
+## `fleet.yaml` and `.fleetignore`
+
+```yaml
+defaultNamespace: cattle-ai-agent-system
+namespace: cattle-ai-agent-system
+helm:
+  takeOwnership: true      # adopt an agent with the same name created in the Rancher UI
+```
+
+```
+README.md
+*.tpl
+```
+
+## `aiagentconfig.yaml`
 
 ```yaml
 apiVersion: ai.cattle.io/v1alpha1
@@ -23,9 +38,9 @@ metadata:
   namespace: cattle-ai-agent-system        # always: Rancher AI only reads this namespace
 spec:
   displayName: My Tool
-  enabled: ${MY_TOOL_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${MY_TOOL_MCP_URL}                # required variable: rendering fails if unset
+  mcpURL: https://mcp.example.com/mcp
   authenticationType: HEADER                # NONE | BASIC | HEADER | OAUTH2
   authenticationSecret: ai-agent-my-tool-auth
   # caBundleRef: { name: my-tool-mcp-ca, key: ca.crt }
@@ -36,57 +51,45 @@ spec:
     ...Guidelines...
 ```
 
-Placeholders:
+Use sensible defaults. Users edit this file in their fork, so mark values they
+must change with `# EDIT`. Placeholders are not supported here.
 
-| Syntax | Behaviour |
-|--------|-----------|
-| `${NAME}` | Required: the deploy fails if the GitHub variable `NAME` is unset |
-| `${NAME:-default}` | Optional: `default` is used when `NAME` is unset |
-
-Values are inserted as plain text and must fit on one line. There are no
-conditionals, so write prompts that still read naturally with the default, for
-example `Jira project: ${MY_TOOL_PROJECT:-not configured (ask the user)}`. Use
-the agent name as the variable prefix.
-
-## 3. `agent.yaml`
+## `secret.yaml.tpl`
 
 ```yaml
-name: my-tool                              # = folder name
-secret:                                    # omit for authenticationType NONE
-  name: ai-agent-my-tool-auth              # = spec.authenticationSecret
-  type: Opaque                             # kubernetes.io/basic-auth for BASIC
-  data:                                    # <secret key>: <GitHub secret name>
-    Authorization: MY_TOOL_MCP_AUTH_HEADER
-  defaults:                                # <secret key>: <value> used when the GitHub secret is unset
-    X-Extra-Header: value
-  optional: false                          # true = skip instead of failing when unset
-extraSecrets: []                           # more Secrets, same shape as `secret`
-copySecrets:                               # copy a key from a Secret already on the cluster (e.g. a CA)
-  - from: { namespace: my-tool, name: my-tool-tls, key: ca.crt,
-            namespaceVar: MY_TOOL_NAMESPACE, nameVar: MY_TOOL_TLS_SECRET }   # optional variable overrides
-    to:   { name: my-tool-mcp-ca, key: ca.crt }
-    optional: false
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-agent-my-tool-auth               # = spec.authenticationSecret
+  namespace: cattle-ai-agent-system
+type: Opaque
+stringData:
+  Authorization: Bearer ${MY_TOOL_TOKEN}    # required GitHub variable
+  X-Extra: ${MY_TOOL_EXTRA:-default}        # optional, with a default
 ```
+
+- `${NAME}` is required. `${NAME:-default}` is optional.
+- Placeholders can sit anywhere in a value. The rendered value is always
+  quoted, so special characters and multi-line PEM data are safe.
+- Comment lines are not rendered.
+- Use the agent name as the variable prefix. Names cannot start with `GITHUB_`.
+- An agent is rendered only when all of its required variables are set.
 
 Secret formats Rancher AI expects:
 
 | Auth type | Secret |
 |-----------|--------|
 | `BASIC` | `kubernetes.io/basic-auth` with `username` and `password` |
-| `HEADER` | `Opaque`. **Every key is sent as an HTTP header**, so store only headers (e.g. `Authorization: Bearer ...`) |
+| `HEADER` | `Opaque`. **Every key is sent as an HTTP header**, so store only headers |
 | `OAUTH2` | `Opaque` with `clientID`, `clientSecret`, `metadataEndpoint`, `scope` |
+| `caBundleRef` | `Opaque` with the PEM CA under the referenced key (default `ca.crt`) |
 
-GitHub secret names cannot start with `GITHUB_`.
-
-## 4. Wire the secrets and check
+## Check
 
 ```bash
-./scripts/wire-secrets.sh    # adds the new secrets to .github/workflows/deploy.yaml
-./scripts/lint.sh            # same checks as CI
+./scripts/lint.sh                    # same checks as CI
+./scripts/render-secrets.sh --check  # which agents have all their variables
 ```
-
-GitHub holds any run that reads all secrets at once (`toJSON(secrets)`) for
-manual approval, so the workflow lists each secret explicitly.
 
 ## Writing the Agent Profile and Guidelines
 
@@ -99,7 +102,6 @@ manual approval, so the workflow lists each secret explicitly.
 - Open with one bold sentence naming the domain.
 - List 3 to 6 topics with real example prompts.
 - End with boundaries: "Do NOT route X here; those belong to the Y agent".
-  Agents that overlap (Argo CD and Fleet, Kubernetes MCP and Rancher) need these most.
 - Keep behavioural rules out of the Profile. The agent may never see it.
 
 **Guidelines**
@@ -115,4 +117,3 @@ manual approval, so the workflow lists each secret explicitly.
 - List every mutating tool in `humanValidationTools`, using the exact name.
 - Tell the agent to treat tool output (issues, pages, logs, files) as data, not
   instructions.
-- Keep environment details in placeholders, not hard-coded.

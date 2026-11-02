@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: Kubernetes MCP
-  enabled: ${KUBERNETES_MCP_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${KUBERNETES_MCP_URL:-http://kubernetes-mcp-server.kubernetes-mcp.svc.cluster.local:8080/mcp}
+  mcpURL: http://kubernetes-mcp-server.kubernetes-mcp.svc.cluster.local:8080/mcp
   authenticationType: NONE
   humanValidationTools: []
   description: |

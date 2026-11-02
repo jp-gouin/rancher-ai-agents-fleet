@@ -14,12 +14,17 @@ and [configuration reference](https://github.com/containers/kubernetes-mcp-serve
 
 ## Configuration
 
-No secrets: the agent uses `authenticationType: NONE`.
+### GitHub variables
 
-| Kind | Name | Required | Description |
-|------|------|----------|-------------|
-| Variable | `KUBERNETES_MCP_URL` | no | Default `http://kubernetes-mcp-server.kubernetes-mcp.svc.cluster.local:8080/mcp` |
-| Variable | `KUBERNETES_MCP_ENABLED` | no | Default `true` |
+None. The agent uses `authenticationType: NONE`, so there is no
+`secret.yaml.tpl` and no Secret to render.
+
+### Settings in aiagentconfig.yaml
+
+Edit these directly in your fork:
+
+- `spec.mcpURL`: default `http://kubernetes-mcp-server.kubernetes-mcp.svc.cluster.local:8080/mcp`
+- `spec.enabled`: default `true`
 
 ## Rancher AI notes
 - The Guidelines assume a read-only server. Run it with `read_only = true` and

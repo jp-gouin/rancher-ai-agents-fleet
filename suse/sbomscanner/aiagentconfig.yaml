@@ -5,9 +5,9 @@ metadata:
   namespace: cattle-ai-agent-system
 spec:
   displayName: SBOMscanner
-  enabled: ${SBOMSCANNER_ENABLED:-true}
+  enabled: true
   builtIn: false
-  mcpURL: ${SBOMSCANNER_MCP_URL:-https://sbomscanner-mcp.sbomscanner.svc.cluster.local:8222}
+  mcpURL: https://sbomscanner-mcp.sbomscanner.svc.cluster.local:8222
   authenticationType: BASIC
   authenticationSecret: ai-agent-sbomscanner-auth
   caBundleRef:
@@ -117,8 +117,8 @@ spec:
     count and total (including security-posture overviews) unless the user
     explicitly asks about one of them by name. When you omit items, say so in
     one short line (e.g. "3 workloads in excluded namespaces not shown").
-    - Ignored namespaces: ${SBOMSCANNER_IGNORE_NAMESPACES:-cattle-ai-agent-system}
-    - Ignored images (`*` is a wildcard): ${SBOMSCANNER_IGNORE_IMAGES:-none}
+    - Ignored namespaces: cattle-ai-agent-system
+    - Ignored images (`*` is a wildcard): none
 
     ## Response format
     - Markdown, concise, no conversational filler.

@@ -1,57 +1,59 @@
 #!/usr/bin/env bash
 # Static checks for every agent folder (run by the Lint workflow, safe to run locally).
+# PUBLIC_REPO=true additionally rejects committed secret.yaml files.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 errors=0
 err() { echo "::error file=$1::$2"; errors=$((errors + 1)); }
 
-names=()
+names=""
 for dir in suse/*/ third-party/*/; do
-  dir="${dir%/}"; agent="$(basename "$dir")"; m="$dir/aiagentconfig.yaml"
-  for f in aiagentconfig.yaml agent.yaml README.md; do
+  dir="${dir%/}"; m="$dir/aiagentconfig.yaml"; tpl="$dir/secret.yaml.tpl"
+  for f in aiagentconfig.yaml fleet.yaml .fleetignore README.md; do
     [[ -f "$dir/$f" ]] || err "$dir/$f" "missing $f"
   done
-  [[ -f "$m" && -f "$dir/agent.yaml" ]] || continue
+  [[ -f "$m" ]] || continue
 
-  [[ "$(yq -r .name "$dir/agent.yaml")" == "$agent" ]] || err "$dir/agent.yaml" "name must be '$agent'"
-
-  # valid YAML once every placeholder is substituted
-  rendered="$(perl -pe 's/\$\{[A-Z0-9_]+:-([^}]*)\}/$1/g; s/\$\{[A-Z0-9_]+\}/https:\/\/example.com/g' "$m")"
-  if ! yq -e '.kind == "AIAgentConfig"' <<<"$rendered" >/dev/null 2>&1; then
-    err "$m" "not a valid AIAgentConfig once placeholders are substituted"; continue
+  if ! yq -e '.kind == "AIAgentConfig" and .apiVersion == "ai.cattle.io/v1alpha1"' "$m" >/dev/null 2>&1; then
+    err "$m" "not a valid AIAgentConfig"; continue
   fi
-  [[ "$(yq -r .metadata.namespace <<<"$rendered")" == "cattle-ai-agent-system" ]] ||
-    err "$m" "metadata.namespace must be cattle-ai-agent-system"
-  name="$(yq -r .metadata.name <<<"$rendered")"
-  [[ " ${names[*]:-} " == *" $name "* ]] && err "$m" "duplicate metadata.name '$name'"
-  names+=("$name")
-  for field in description systemPrompt displayName mcpURL authenticationType; do
-    [[ -n "$(yq -r ".spec.$field // \"\"" <<<"$rendered")" ]] || err "$m" "spec.$field is empty"
+  [[ "$(yq -r .metadata.namespace "$m")" == "cattle-ai-agent-system" ]] || err "$m" "metadata.namespace must be cattle-ai-agent-system"
+  name="$(yq -r .metadata.name "$m")"
+  [[ " $names " == *" $name "* ]] && err "$m" "duplicate metadata.name '$name'"
+  names+=" $name"
+  for field in displayName mcpURL authenticationType description systemPrompt; do
+    [[ -n "$(yq -r ".spec.$field // \"\"" "$m")" ]] || err "$m" "spec.$field is empty"
   done
-  if grep -nE '\$\{' "$m" | grep -vqE '\$\{[A-Z0-9_]+(:-[^}]*)?\}'; then
-    err "$m" "malformed placeholder (use \${NAME} or \${NAME:-default})"
+  grep -q '\${' "$m" && err "$m" "placeholders are not supported in aiagentconfig.yaml (only in secret.yaml.tpl)"
+
+  [[ "$(yq -r '.defaultNamespace' "$dir/fleet.yaml" 2>/dev/null)" == "cattle-ai-agent-system" ]] ||
+    err "$dir/fleet.yaml" "defaultNamespace must be cattle-ai-agent-system"
+  grep -qx '\*\.tpl' "$dir/.fleetignore" 2>/dev/null || err "$dir/.fleetignore" "must ignore *.tpl"
+
+  # every secret referenced by the AIAgentConfig is produced by the template
+  auth="$(yq -r .spec.authenticationType "$m")"
+  refs="$(yq -r '[.spec.authenticationSecret, .spec.caBundleRef.name] | map(select(. != null)) | .[]' "$m")"
+  if [[ "$auth" =~ ^(BASIC|HEADER|OAUTH2)$ || -n "$refs" ]]; then
+    if [[ ! -f "$tpl" ]]; then
+      err "$dir" "secret.yaml.tpl is required (spec references a Secret)"
+    else
+      for r in $refs; do
+        yq -e "select(.kind == \"Secret\" and .metadata.name == \"$r\")" "$tpl" >/dev/null 2>&1 ||
+          err "$tpl" "no Secret named '$r' (referenced by $m)"
+      done
+      [[ -z "$(yq -r 'select(.kind == "Secret") | .metadata.namespace | select(. != "cattle-ai-agent-system")' "$tpl")" ]] ||
+        err "$tpl" "Secrets must be in cattle-ai-agent-system"
+      for v in $(grep -vE '^\s*#' "$tpl" | grep -ohE '\$\{[A-Z0-9_]+' | cut -c3- | sort -u); do
+        [[ "$v" == GITHUB_* ]] && err "$tpl" "variable names cannot start with GITHUB_ ($v)"
+        grep -q "\`$v\`" "$dir/README.md" || err "$dir/README.md" "variable $v is not documented"
+      done
+    fi
   fi
 
-  # auth secret consistency
-  auth="$(yq -r .spec.authenticationType <<<"$rendered")"
-  sname="$(yq -r '.spec.authenticationSecret // ""' <<<"$rendered")"
-  if [[ "$auth" =~ ^(BASIC|HEADER|OAUTH2)$ ]]; then
-    [[ "$(yq -r '.secret.name // ""' "$dir/agent.yaml")" == "$sname" ]] ||
-      err "$dir/agent.yaml" "secret.name must equal spec.authenticationSecret ($sname)"
+  if [[ "${PUBLIC_REPO:-false}" == "true" && -f "$dir/secret.yaml" ]]; then
+    err "$dir/secret.yaml" "rendered secrets must never be committed to a public repository"
   fi
-
-  # every variable and secret is documented, every secret is wired into the deploy workflow
-  for v in $(grep -ohE '\$\{[A-Z0-9_]+' "$m" | cut -c3- | sort -u) \
-           $(yq -r '(.copySecrets // [])[] | .from | (.namespaceVar, .nameVar) | select(. != null)' "$dir/agent.yaml"); do
-    grep -q "\`$v\`" "$dir/README.md" || err "$dir/README.md" "variable $v is not documented"
-  done
-  for s in $(yq -r '[.secret.data, (.extraSecrets // [])[].data] | map(select(. != null) | to_entries[] | .value) | .[]' "$dir/agent.yaml"); do
-    [[ "$s" == GITHUB_* ]] && err "$dir/agent.yaml" "GitHub secret names cannot start with GITHUB_ ($s)"
-    grep -q "\`$s\`" "$dir/README.md" || err "$dir/README.md" "secret $s is not documented"
-    grep -q "secrets\.$s }}" .github/workflows/deploy.yaml ||
-      err .github/workflows/deploy.yaml "add '$s' (from secrets.$s) to the env of the 'Create agent secrets' step"
-  done
 done
 ((errors)) && { echo "$errors problem(s) found"; exit 1; }
 echo "All agents OK"
