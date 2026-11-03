@@ -22,6 +22,4 @@ deployed to `cattle-ai-agent-system` on the Rancher local cluster.
 3. Fleet deploys everything in this folder (GitRepo path `suse`).
 
 ## Add an agent
-Add `<name>.yaml` (and `<name>.secret.yaml.tpl` if it needs credentials),
-starting with the same comment header, then add one row to the table above.
-`./scripts/lint.sh` checks the rest. See [docs/adding-an-agent.md](../docs/adding-an-agent.md).
+See [Add an agent](../README.md#add-an-agent). Then add one row to the table above.

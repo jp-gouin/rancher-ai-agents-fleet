@@ -40,11 +40,32 @@ created in the Rancher UI. Back those up first.
 > access to your repository. Keep it private and restrict access. The render
 > workflow refuses to run in a public repository.
 
-## Updates and contributions
-- To get upstream changes: `git remote add upstream https://github.com/jp-gouin/rancher-ai-agents-fleet.git && git pull upstream main --allow-unrelated-histories`.
-- To add an agent, see [docs/adding-an-agent.md](docs/adding-an-agent.md).
-  It takes one or two files and one table row. `./scripts/lint.sh` runs the CI
-  checks. Never commit a rendered `*.secret.yaml` here.
+## Add an agent
+Put SUSE products in `suse/` and everything else in `third-party/`:
+
+1. **`<name>.yaml`**: an `AIAgentConfig` with `metadata.name: <name>` and
+   `namespace: cattle-ai-agent-system`. Start it with a short comment: what it
+   does, the upstream MCP link, notes specific to Rancher AI, and which fields
+   to edit. Copy an existing agent as a starting point.
+   - **Agent Profile** (`description`): what the agent covers, example prompts,
+     and "Do NOT route X here" boundaries. The supervisor uses it to route.
+   - **Guidelines** (`systemPrompt`): role, exact tool names, rules, hand-offs
+     to other agents, workflows, and response format.
+   - List every mutating tool in `humanValidationTools`.
+2. **`<name>.secret.yaml.tpl`** (only if it needs credentials): the Secret named
+   in `spec.authenticationSecret` (and `caBundleRef`). Put `${VARIABLE}` or
+   `${VARIABLE:-default}` in values, and describe each variable in a comment above it.
+
+   | Auth type | Secret |
+   |-----------|--------|
+   | `BASIC` | `kubernetes.io/basic-auth` with `username` and `password` |
+   | `HEADER` | `Opaque`. Every key is sent as an HTTP header |
+   | `OAUTH2` | `Opaque` with `clientID`, `clientSecret`, `metadataEndpoint`, `scope` |
+3. Add one row to the folder's README table.
+
+Never commit a rendered `*.secret.yaml` to this repository. To pull upstream
+changes into your copy:
+`git pull https://github.com/jp-gouin/rancher-ai-agents-fleet.git main --allow-unrelated-histories`.
 
 ## License
 [Apache 2.0](LICENSE)

@@ -13,15 +13,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check agent folders
+      - name: Check agents
         env:
           PUBLIC_REPO: ${{ !github.event.repository.private }}
-        run: ./scripts/lint.sh
-      - name: shellcheck
-        run: shellcheck -S warning scripts/*.sh
+        run: |
+          rc=0
+          for f in suse/*.yaml third-party/*.yaml; do
+            case "$f" in */fleet.yaml|*.secret.yaml) continue ;; esac
+            name=$(basename "$f" .yaml)
+            yq -e '.kind == "AIAgentConfig" and .metadata.namespace == "cattle-ai-agent-system"' "$f" >/dev/null \
+              || { echo "::error file=$f::must be an AIAgentConfig in cattle-ai-agent-system"; rc=1; }
+            [ "$(yq -r .metadata.name "$f")" = "$name" ] || { echo "::error file=$f::metadata.name must be '$name'"; rc=1; }
+            grep -q "\`$name\`" "$(dirname "$f")/README.md" || { echo "::error file=$f::add a row for \`$name\` to the folder README"; rc=1; }
+          done
+          for t in */*.secret.yaml.tpl; do
+            sed 's/\${[^}]*}/x/g' "$t" | yq -e 'select(.kind == "Secret") | .metadata.namespace == "cattle-ai-agent-system"' >/dev/null \
+              || { echo "::error file=$t::must contain Secrets in cattle-ai-agent-system"; rc=1; }
+          done
+          if [ "$PUBLIC_REPO" = "true" ] && ls ./*/*.secret.yaml >/dev/null 2>&1; then
+            echo "::error::rendered *.secret.yaml must never be committed to the public repository"; rc=1
+          fi
+          exit $rc
 
   no-personal-data:
-    # Only meaningful for the public upstream repository: private forks commit rendered secrets.
     if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     steps:
