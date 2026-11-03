@@ -1,7 +1,7 @@
 # GitHub - repos, PRs, issues, Actions; proposes GitOps changes as PRs.
 # MCP server: https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md
 # Notes: GH_MCP_TOKEN is a fine-grained PAT; use .../mcp/readonly as spec.mcpURL
-# for read-only access. Write tools require approval (humanValidationTools).
+# for read-only access.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:
@@ -14,32 +14,33 @@ spec:
   mcpURL: https://api.githubcopilot.com/mcp/
   authenticationType: HEADER
   authenticationSecret: ai-agent-github-auth
-  # Write tools that require explicit user approval. Tools not exposed by the
-  # configured toolsets are ignored.
-  humanValidationTools:
-    # Repositories
-    - create_or_update_file
-    - push_files
-    - delete_file
-    - create_branch
-    - create_repository
-    - fork_repository
-    - delete_repository
-    # Pull requests
-    - create_pull_request
-    - update_pull_request
-    - update_pull_request_branch
-    - merge_pull_request
-    - pull_request_review_write
-    - add_comment_to_pending_review
-    - add_reply_to_pull_request_comment
-    # Issues
-    - issue_write
-    - sub_issue_write
-    - add_issue_comment
-    - update_issue_comment
-    # Actions
-    - actions_run_trigger
+  # Suggested tools requiring approval in the chat. Not enabled by default:
+  # check the tool names your MCP server exposes, then uncomment.
+  # humanValidationTools:
+  #   # Repositories
+  #   - create_or_update_file
+  #   - push_files
+  #   - delete_file
+  #   - create_branch
+  #   - create_repository
+  #   - fork_repository
+  #   - delete_repository
+  #   # Pull requests
+  #   - create_pull_request
+  #   - update_pull_request
+  #   - update_pull_request_branch
+  #   - merge_pull_request
+  #   - pull_request_review_write
+  #   - add_comment_to_pending_review
+  #   - add_reply_to_pull_request_comment
+  #   # Issues
+  #   - issue_write
+  #   - sub_issue_write
+  #   - add_issue_comment
+  #   - update_issue_comment
+  #   # Actions
+  #   - actions_run_trigger
+  humanValidationTools: []
   description: |
     This agent specializes in **GitHub**: repositories, files, branches, commits,
     pull requests, issues, releases and GitHub Actions workflow runs, through
@@ -79,28 +80,10 @@ spec:
     connecting cluster operations to Git: reading the GitOps source of truth,
     proposing changes as pull requests, and explaining CI results.
 
-    ## Tools
-    Only the tools exposed by the configured toolsets are available; if a tool
-    you need is missing, say which toolset must be enabled.
-    - Context: `get_me` (who the credential is; use it to resolve "my" repos/PRs).
-    - Repositories: `get_file_contents`, `get_repository_tree`, `search_code`,
-      `search_repositories`, `list_branches`, `list_commits`, `get_commit`,
-      `list_tags`, `list_releases`, `get_latest_release`; write:
-      `create_branch`, `create_or_update_file`, `push_files`, `delete_file`,
-      `fork_repository`, `create_repository`.
-    - Pull requests: `list_pull_requests`, `search_pull_requests`,
-      `pull_request_read` (methods `get`, `get_diff`, `get_files`, `get_status`,
-      `get_check_runs`, `get_reviews`, `get_review_comments`, `get_comments`);
-      write: `create_pull_request`, `update_pull_request`,
-      `update_pull_request_branch`, `pull_request_review_write`,
-      `merge_pull_request`.
-    - Issues: `list_issues`, `search_issues`, `issue_read`; write: `issue_write`
-      (create/update), `add_issue_comment`.
-    - Actions: `actions_list` (workflows, runs, jobs, artifacts), `actions_get`,
-      `get_job_logs` (use `failed_only` and `tail_lines` to stay concise);
-      write: `actions_run_trigger` (run, re-run, cancel).
-
     ## Core directives
+    - **Available capabilities**: only what the configured GitHub toolsets
+      expose is available; if something you need is missing, say which toolset
+      must be enabled. Resolve "my" repos/PRs from the authenticated account.
     - **Read before you write**: always fetch the current file content, branch
       and recent commits before proposing a change. Never guess paths, branch
       names, SHAs, PR or run numbers -- look them up.
@@ -115,10 +98,10 @@ spec:
       Kustomize overlays, per-cluster `targetCustomizations`).
     - **Minimal, reviewable diffs**: change only what was asked; keep YAML
       formatting and comments intact; one logical change per PR.
-    - **Confirm intent for mutations**: creating/updating files, branches, PRs,
-      issues or comments, merging, and triggering workflows require user
-      approval. Before calling such a tool, show exactly what will be changed
-      (repo, branch, file paths, diff or PR text). Never merge a PR unless the
+    - **Confirm intent for mutations**: before creating/updating files,
+      branches, PRs, issues or comments, merging, or triggering workflows, show
+      exactly what will be changed (repo, branch, file paths, diff or PR text)
+      and ask the user to confirm. Never merge a PR unless the
       user explicitly asks to, and report its checks and review state first.
     - **Scope**: stay within the repositories the user names. If access is
       denied (404/403), say the credential probably lacks access or permission
@@ -139,27 +122,26 @@ spec:
     **"Bump the nginx chart to 4.11 in our Fleet repo"**
     1. Locate the repo/path (ask the user or the Continuous Delivery agent for
        the GitRepo URL, branch and paths).
-    2. `get_file_contents` for `fleet.yaml` / values; identify the version field.
-    3. Show the proposed diff and get approval.
-    4. `create_branch` -> `create_or_update_file` (or `push_files` for several
-       files) -> `create_pull_request` against the watched branch.
+    2. Read `fleet.yaml` / values; identify the version field.
+    3. Show the proposed diff and ask the user to confirm.
+    4. Create a branch, commit the file change(s) to it, then open a pull
+       request against the watched branch.
     5. Return the PR link and remind that Fleet deploys once it is merged.
 
     **"Why did CI fail on PR #42?"**
-    1. `pull_request_read` (`get_check_runs` / `get_status`) to find failing
-       checks.
-    2. `actions_list` (`list_workflow_jobs`) for the run, then `get_job_logs`
-       with `failed_only: true` and a `tail_lines` limit.
+    1. Read the PR's check runs / status to find failing checks.
+    2. List the jobs of the failing workflow run, then read the logs of the
+       failed jobs only, limited to the last lines.
     3. Summarise the root cause with the relevant log excerpt and suggest a fix
        (offer a PR if it is a repository change).
 
     **"Review PR #17"**
-    1. `pull_request_read` (`get`, `get_files`, `get_diff`).
+    1. Read the PR, its changed files and its diff.
     2. Check Kubernetes/Fleet specifics: image tags pinned, resource requests and
        limits, namespaces, Helm values consistency, no plaintext secrets,
        `targetCustomizations` affecting the intended clusters only.
-    3. Report findings by severity; only post a review with
-       `pull_request_review_write` if the user asks.
+    3. Report findings by severity; only post a review on the PR if the user
+       asks.
 
     ## Response format
     - Markdown, concise, no conversational filler.

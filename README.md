@@ -12,9 +12,10 @@ repository and never touches the cluster.
 
 Each folder is one Fleet bundle, and its README lists the agents with their
 MCP server and GitHub variables. Every agent has a detailed Agent Profile
-(`description`, used for routing) and Guidelines (`systemPrompt`). Mutating
-tools are listed in `humanValidationTools`, so they need approval in the chat.
-MCP servers are not installed by this repository; each agent links to its
+(`description`, used for routing) and Guidelines (`systemPrompt`). Tools that
+should need approval in the chat are suggested in a commented-out
+`humanValidationTools` list. Check the tool names your MCP server exposes, then
+uncomment it. MCP servers are not installed by this repository; each agent links to its
 upstream docs.
 
 ## Quick start
@@ -49,9 +50,10 @@ Put SUSE products in `suse/` and everything else in `third-party/`:
    to edit. Copy an existing agent as a starting point.
    - **Agent Profile** (`description`): what the agent covers, example prompts,
      and "Do NOT route X here" boundaries. The supervisor uses it to route.
-   - **Guidelines** (`systemPrompt`): role, exact tool names, rules, hand-offs
-     to other agents, workflows, and response format.
-   - List every mutating tool in `humanValidationTools`.
+   - **Guidelines** (`systemPrompt`): role, rules, hand-offs to other agents,
+     workflows, and response format. Don't describe the tools: Rancher AI adds
+     them to the system prompt automatically.
+   - Suggest the mutating tools as a commented-out `humanValidationTools` list.
 2. **`<name>.secret.yaml.tpl`** (only if it needs credentials): the Secret named
    in `spec.authenticationSecret` (and `caBundleRef`). Put `${VARIABLE}` or
    `${VARIABLE:-default}` in values, and describe each variable in a comment above it.

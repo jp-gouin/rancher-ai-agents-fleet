@@ -8,7 +8,7 @@ bundle deployed to `cattle-ai-agent-system` on the Rancher local cluster.
 | `argocd` | Read-only Argo CD inventory, sync/health, drift | [mcp-for-argocd](https://github.com/argoproj-labs/mcp-for-argocd) | `ARGOCD_MCP_TOKEN` |
 | `github` | Repos, PRs, issues, Actions; GitOps changes as PRs | [GitHub remote MCP](https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md) | `GH_MCP_TOKEN`, `GH_MCP_TOOLSETS`* |
 | `kubernetes-mcp` | Read-only introspection of the Rancher local cluster | [kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) | none |
-| `ovh-dedicated-server` | Bare-metal inventory, tasks, reboots (approved) | [OVHcloud MCP](https://labs.ovhcloud.com/en/mcp-server/) | `OVH_CLIENT_ID`, `OVH_CLIENT_SECRET`, `OVH_OAUTH_*`* |
+| `ovh-dedicated-server` | Bare-metal inventory, tasks, interventions, reboots | [OVHcloud MCP](https://labs.ovhcloud.com/en/mcp-server/) | `OVH_CLIENT_ID`, `OVH_CLIENT_SECRET`, `OVH_OAUTH_*`* |
 | `ovh-network` | IPs, Edge Network Firewall, DDoS; files firewall tickets | [OVHcloud MCP](https://labs.ovhcloud.com/en/mcp-server/) | same as `ovh-dedicated-server` |
 | `rovo` | Jira and Confluence; opens network request tickets | [Atlassian Rovo MCP](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/configuring-authentication-via-api-token/) | `ROVO_USERNAME`, `ROVO_API_TOKEN` |
 

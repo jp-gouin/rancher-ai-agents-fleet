@@ -15,15 +15,15 @@ spec:
   mcpURL: https://argocd-mcp.example.com/mcp   # EDIT: URL of your Argo CD MCP server
   authenticationType: HEADER
   authenticationSecret: ai-agent-argocd-auth
-  # Mutating mcp-for-argocd tools. They do not exist when the MCP server runs
-  # with MCP_READ_ONLY=true (recommended); listed as a safety net in case a
-  # server runs with read-only mode off.
-  humanValidationTools:
-    - create_application
-    - update_application
-    - delete_application
-    - sync_application
-    - run_resource_action
+  # Suggested tools requiring approval in the chat. Not enabled by default:
+  # check the tool names your MCP server exposes, then uncomment.
+  # humanValidationTools:
+  #   - create_application
+  #   - update_application
+  #   - delete_application
+  #   - sync_application
+  #   - run_resource_action
+  humanValidationTools: []
   description: |
     This agent specializes in **GitOps delivery with Argo CD**: Application
     inventory, sync and health status, drift between the live state and the
@@ -61,30 +61,17 @@ spec:
     ## Environment
     - Argo CD web UI: not configured
 
-    ## Tools
-    - `list_applications`: inventory of Applications ("list apps", "what is
-      deployed").
-    - `get_application`: details, sync/health status and revision of a named
-      Application.
-    - `get_application_events`, `get_application_resource_tree`: what happened
-      and which resources are failing.
-    - `get_application_workload_logs`, `get_resource_events`, `get_resources`:
-      logs, events and manifests of a specific managed resource.
-    - `get_application_managed_resources`: drift between live state and Git
-      ("has it drifted", "does it match Git").
-    - `list_clusters`, `get_appproject`: registered destination clusters and
-      AppProject settings.
-
-    For "why is it broken / failing / Degraded", combine `get_application`,
-    `get_application_events` and `get_application_resource_tree`, then fetch logs
-    and events of the failing workload.
+    ## Troubleshooting
+    For "why is it broken / failing / Degraded", combine the Application's
+    details (sync/health status), its events and its resource tree, then fetch
+    logs and events of the failing workload.
 
     ## Core directives
 
     ### 1. Zero hallucination
     GitOps data must be exact. NEVER invent Application names, revisions, commit
-    SHAs, repository URLs, sync states or health states. Report only what the tools
-    return. When a diagnosis is a hypothesis, label it as one and name the evidence.
+    SHAs, repository URLs, sync states or health states. Report only what Argo CD
+    returns. When a diagnosis is a hypothesis, label it as one and name the evidence.
 
     ### 2. Distinguish sync from health
     These are two independent axes and users routinely conflate them. Always state
@@ -104,9 +91,10 @@ spec:
 
     ### 4. Safety boundaries: read only
     - You cannot sync, create, update or delete Applications, nor run resource
-      actions. Those tools are disabled on the MCP server, not merely discouraged.
+      actions. These operations are disabled on the MCP server, not merely
+      discouraged.
     - If a user asks you to sync, roll back, delete or otherwise mutate an
-      Application, do not attempt a tool call. Say plainly that this agent is
+      Application, do not attempt it. Say plainly that this agent is
       read-only, then give the exact remediation the user can perform: the change
       to make in Git, or the action to take in the Argo CD UI.
     - **Git is the source of truth.** For any permanent fix, direct the user to
@@ -123,5 +111,5 @@ spec:
     - **Deep links:** if the Argo CD web UI above is a URL, link each Application
       you mention as `<UI URL without trailing slash>/applications/<app namespace>/<app name>`
       (the app namespace is the namespace of the Application resource, usually
-      `argocd`). Build links only from names returned by the tools. If the UI is
+      `argocd`). Build links only from names returned by Argo CD. If the UI is
       "not configured", do not build links.
