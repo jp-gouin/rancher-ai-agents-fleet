@@ -14,25 +14,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check agents
-        env:
-          PUBLIC_REPO: ${{ !github.event.repository.private }}
         run: |
           rc=0
           for f in suse/*.yaml third-party/*.yaml; do
-            case "$f" in */fleet.yaml|*.secret.yaml) continue ;; esac
-            name=$(basename "$f" .yaml)
+            [ "$(basename "$f")" = fleet.yaml ] && continue
+            name=$(basename "$f" .yaml); readme="$(dirname "$f")/README.md"
+            if yq -e 'select(.kind == "Secret")' "$f" >/dev/null 2>&1; then
+              echo "::error file=$f::never commit Secrets: document them in $readme instead"; rc=1; continue
+            fi
             yq -e '.kind == "AIAgentConfig" and .metadata.namespace == "cattle-ai-agent-system"' "$f" >/dev/null \
-              || { echo "::error file=$f::must be an AIAgentConfig in cattle-ai-agent-system"; rc=1; }
+              || { echo "::error file=$f::must be an AIAgentConfig in cattle-ai-agent-system"; rc=1; continue; }
             [ "$(yq -r .metadata.name "$f")" = "$name" ] || { echo "::error file=$f::metadata.name must be '$name'"; rc=1; }
-            grep -q "\`$name\`" "$(dirname "$f")/README.md" || { echo "::error file=$f::add a row for \`$name\` to the folder README"; rc=1; }
+            grep -q "\`$name\`" "$readme" || { echo "::error file=$f::add a row for \`$name\` to $readme"; rc=1; }
+            for s in $(yq -r '[.spec.authenticationSecret, .spec.caBundleRef.name] | map(select(. != null)) | .[]' "$f"); do
+              grep -q "\`$s\`" "$readme" || { echo "::error file=$f::document Secret \`$s\` under Secrets in $readme"; rc=1; }
+            done
           done
-          for t in */*.secret.yaml.tpl; do
-            sed 's/\${[^}]*}/x/g' "$t" | yq -e 'select(.kind == "Secret") | .metadata.namespace == "cattle-ai-agent-system"' >/dev/null \
-              || { echo "::error file=$t::must contain Secrets in cattle-ai-agent-system"; rc=1; }
-          done
-          if [ "$PUBLIC_REPO" = "true" ] && ls ./*/*.secret.yaml >/dev/null 2>&1; then
-            echo "::error::rendered *.secret.yaml must never be committed to the public repository"; rc=1
-          fi
           exit $rc
 
   no-personal-data:

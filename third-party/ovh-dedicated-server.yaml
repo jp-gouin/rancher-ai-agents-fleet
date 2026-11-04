@@ -1,9 +1,10 @@
 # OVHcloud Dedicated Server - bare-metal inventory, tasks, interventions, reboots.
 # MCP server: https://labs.ovhcloud.com/en/mcp-server/
-# Notes: OAuth2, each user logs in to OVHcloud. Register the client dynamically
-# with the Rancher AI UI (Add agent > OAuth2 > discover), copy the client ID and
-# secret to OVH_CLIENT_ID / OVH_CLIENT_SECRET, discard the draft agent. Shared
-# with ovh-network. Edit: spec.mcpURL for the ca/us regions.
+# Secret: ai-agent-ovh-dedicated-server-auth (Opaque): clientID, clientSecret,
+# metadataEndpoint (https://mcp.eu.ovhcloud.com/.well-known/oauth-authorization-server), scope (all).
+# Notes: OAuth2, each user logs in to OVHcloud. Get the client by dynamic
+# registration in the Rancher AI UI (Add agent > OAuth2 > discover), then discard
+# the draft agent. Edit: spec.mcpURL for the ca/us regions.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

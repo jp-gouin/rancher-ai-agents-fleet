@@ -1,10 +1,11 @@
 # SBOMscanner - registry and workload vulnerability reports, scan jobs, VEX.
 # MCP server: https://documentation.suse.com/cloudnative/vulnerability-scanner/latest/en/user-guide/mcp-server.html
-# Notes: credentials must match the server's mcp.auth.secretName secret. The CA
-# (SBOMSCANNER_MCP_CA) is the ca.crt key of the sbomscanner-mcp-tls secret
-# (rancher-sbomscanner-mcp-tls in cattle-sbomscanner-system for Rancher Apps
-# installs; adjust spec.mcpURL too). Update it when cert-manager renews the cert.
-# Edit: spec.mcpURL, "Ignored namespaces/images" in the Guidelines.
+# Secrets: ai-agent-sbomscanner-auth (kubernetes.io/basic-auth): username, password
+# from the server's mcp.auth.secretName secret; sbomscanner-mcp-ca (Opaque): ca.crt
+# from the MCP server TLS secret (sbomscanner-mcp-tls). Refresh the CA when
+# cert-manager renews the certificate.
+# Edit: spec.mcpURL (Rancher Apps installs: rancher-sbomscanner-mcp.cattle-sbomscanner-system),
+# "Ignored namespaces/images" in the Guidelines.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

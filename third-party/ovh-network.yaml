@@ -1,8 +1,8 @@
 # OVHcloud Network - IPs, Edge Network Firewall, DDoS mitigation.
 # MCP server: https://labs.ovhcloud.com/en/mcp-server/
-# Notes: same OAuth2 client as ovh-dedicated-server. Never changes firewall rules:
-# it hands a change request to the rovo agent (or returns a ticket body).
-# Edit: spec.mcpURL for the ca/us regions.
+# Secret: ai-agent-ovh-network-auth, same format as ovh-dedicated-server.
+# Notes: never changes firewall rules: it hands a change request to the rovo agent
+# (or returns a ticket body). Edit: spec.mcpURL for the ca/us regions.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:

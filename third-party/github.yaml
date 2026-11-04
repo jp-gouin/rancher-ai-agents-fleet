@@ -1,7 +1,8 @@
 # GitHub - repos, PRs, issues, Actions; proposes GitOps changes as PRs.
 # MCP server: https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md
-# Notes: GH_MCP_TOKEN is a fine-grained PAT; use .../mcp/readonly as spec.mcpURL
-# for read-only access.
+# Secret: ai-agent-github-auth (Opaque): Authorization = "Bearer <PAT>", optional
+# X-MCP-Toolsets = context,repos,issues,pull_requests,users,actions.
+# Notes: use .../mcp/readonly as spec.mcpURL for read-only access.
 apiVersion: ai.cattle.io/v1alpha1
 kind: AIAgentConfig
 metadata:
